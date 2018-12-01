@@ -1,17 +1,23 @@
-defmodule Main do
+defmodule Mix.Tasks.Main do
+  use Mix.Task
+    
+  defmacro await(do: block) do
+    quote do
+      receive do
+        unquote(block)
+      after
+        5000 ->
+          IO.puts("no messages in receive")
+          exit(:error)
+      end
+    end
+  end
+
   def run(filename \\ "input.txt")
 
   def run(filename) do
-    {repeated_sum, times_through_loop} = part_two(filename)
-  end
-
-  defp part_one(filename) do
-    File.open!(filename, fn pid ->
-      pid
-      |> IO.stream(:line)
-      |> parse_lines()
-      |> Enum.sum()
-    end)
+    part_two(filename)
+    |> IO.inspect()
   end
 
   defp parse_lines(lines) do
@@ -29,8 +35,8 @@ defmodule Main do
         |> IO.stream(:line)
         |> parse_lines()
       end)
-    
-    spawn(fn -> receive_loop([], 0) end)
+
+    spawn(fn -> receive_loop([], {nil, nil}) end)
     |> send_loop({lines, []}, 0)
   end
 
@@ -42,8 +48,11 @@ defmodule Main do
     [next_value | rest_stack] = to_go
 
     self_pid = self()
+
+    # send our message
     spawn(fn -> send(end_pid, {self_pid, aggregate}) end)
 
+    # and wait for our response
     receive do
       {:halt, {value, counter}} ->
         {value, counter}
@@ -62,14 +71,44 @@ defmodule Main do
     end
   end
 
-  defp receive_loop(value_list, counter) when is_list(value_list) do
+  defp receive_loop(value_list, {nil, nil}) do
     receive do
       {sender, value} ->
+        spawn(fn -> send(sender, :cont) end)
+        receive_loop([value | value_list], {value, value})
+
+      _other ->
+        IO.puts("unexpected message, raising")
+        exit(:error)
+    after
+      5000 ->
+        IO.puts("no messages in receive-nil")
+        exit(:error)
+    end
+  end
+
+  defp receive_loop(value_list, {min, max}) do
+    receive do
+      {sender, value} when value === min ->
+        send(sender, {:halt, {value, 0}})
+
+      {sender, value} when value === max ->
+        send(sender, {:halt, {value, 0}})
+
+      {sender, value} when value < min ->
+        spawn(fn -> send(sender, :cont) end)
+        receive_loop([value | value_list], {value, max})
+
+      {sender, value} when value > max ->
+        spawn(fn -> send(sender, :cont) end)
+        receive_loop([value | value_list], {min, value})
+
+      {sender, value} ->
         if Enum.member?(value_list, value) do
-          send(sender, {:halt, {value, counter}})
+          send(sender, {:halt, {value, 0}})
         else
           spawn(fn -> send(sender, :cont) end)
-          receive_loop([value | value_list], counter + 1)
+          receive_loop([value | value_list], {min, max})
         end
 
       _other ->
@@ -77,11 +116,8 @@ defmodule Main do
         exit(:error)
     after
       5000 ->
-        IO.puts("no messages in receive")
+        IO.puts("no messages in receive-value")
         exit(:error)
     end
   end
 end
-
-Main.run()
-
