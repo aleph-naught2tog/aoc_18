@@ -1,6 +1,4 @@
-defmodule Mix.Tasks.Main do
-  use Mix.Task
-    
+defmodule Main do
   defmacro await(do: block) do
     quote do
       receive do
@@ -23,9 +21,7 @@ defmodule Mix.Tasks.Main do
   defp parse_lines(lines) do
     lines
     |> Enum.map(&String.trim/1)
-    |> Enum.reject(&(String.length(&1) === 0))
-    |> Enum.map(&Integer.parse/1)
-    |> Enum.map(&elem(&1, 0))
+    |> Enum.map(&String.to_integer/1)
   end
 
   defp part_two(filename) do
@@ -40,8 +36,8 @@ defmodule Mix.Tasks.Main do
     |> send_loop({lines, []}, 0)
   end
 
-  defp send_loop(end_pid, {[], done}, sum) do
-    send_loop(end_pid, {done, []}, sum)
+  defp send_loop(end_pid, {[], done}, aggregate) do
+    send_loop(end_pid, {done, []}, aggregate)
   end
 
   defp send_loop(end_pid, {to_go, done}, aggregate) do
@@ -53,7 +49,7 @@ defmodule Mix.Tasks.Main do
     spawn(fn -> send(end_pid, {self_pid, aggregate}) end)
 
     # and wait for our response
-    receive do
+    await do
       {:halt, {value, counter}} ->
         {value, counter}
 
@@ -64,15 +60,11 @@ defmodule Mix.Tasks.Main do
       _other ->
         IO.puts("unexpected message, raising")
         exit(:error)
-    after
-      5000 ->
-        IO.puts("no messages in send")
-        exit(:error)
     end
   end
 
   defp receive_loop(value_list, {nil, nil}) do
-    receive do
+    await do
       {sender, value} ->
         spawn(fn -> send(sender, :cont) end)
         receive_loop([value | value_list], {value, value})
@@ -80,15 +72,11 @@ defmodule Mix.Tasks.Main do
       _other ->
         IO.puts("unexpected message, raising")
         exit(:error)
-    after
-      5000 ->
-        IO.puts("no messages in receive-nil")
-        exit(:error)
     end
   end
 
   defp receive_loop(value_list, {min, max}) do
-    receive do
+    await do
       {sender, value} when value === min ->
         send(sender, {:halt, {value, 0}})
 
@@ -114,10 +102,8 @@ defmodule Mix.Tasks.Main do
       _other ->
         IO.puts("unexpected message, raising")
         exit(:error)
-    after
-      5000 ->
-        IO.puts("no messages in receive-value")
-        exit(:error)
     end
   end
 end
+
+Main.run()
