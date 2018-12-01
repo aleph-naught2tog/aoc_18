@@ -2,8 +2,7 @@ defmodule Main do
   def run(filename \\ "input.txt")
 
   def run(filename) do
-    part_one(filename)
-    part_two(filename)
+    {repeated_sum, times_through_loop} = part_two(filename)
   end
 
   defp part_one(filename) do
@@ -13,7 +12,6 @@ defmodule Main do
       |> parse_lines()
       |> Enum.sum()
     end)
-    |> IO.inspect()
   end
 
   defp parse_lines(lines) do
@@ -31,13 +29,9 @@ defmodule Main do
         |> IO.stream(:line)
         |> parse_lines()
       end)
-    # lines = parse_lines(~w{+3 +3 +4 -2 -4}) # -> 10
-    # lines = parse_lines(~w{-6 +3 +8 +5 -6}) # -> 5
-    # lines = parse_lines(~w{+7 +7 -2 -7 -4}) # -> 14
-      
+    
     spawn(fn -> receive_loop([], 0) end)
     |> send_loop({lines, []}, 0)
-    |> IO.inspect()
   end
 
   defp send_loop(end_pid, {[], done}, sum) do
@@ -69,10 +63,6 @@ defmodule Main do
   end
 
   defp receive_loop(value_list, counter) when is_list(value_list) do
-    if (rem(counter, 100) === 0) do
-      IO.puts("Round: #{counter}")
-    end
-    
     receive do
       {sender, value} ->
         if Enum.member?(value_list, value) do
