@@ -35,26 +35,24 @@ defmodule Main do
     # lines = parse_lines(~w{-6 +3 +8 +5 -6}) # -> 5
     # lines = parse_lines(~w{+7 +7 -2 -7 -4}) # -> 14
       
-    spawn(fn -> receive_loop([]) end)
+    spawn(fn -> receive_loop([], 0) end)
     |> send_loop({lines, []}, 0)
     |> IO.inspect()
   end
 
   defp send_loop(end_pid, {[], done}, sum) do
-    IO.puts("----")
     send_loop(end_pid, {done, []}, sum)
   end
 
   defp send_loop(end_pid, {to_go, done}, aggregate) do
-    IO.puts("length: #{length(to_go)}, #{length(done)}, #{aggregate}")
     [next_value | rest_stack] = to_go
 
     self_pid = self()
     spawn(fn -> send(end_pid, {self_pid, aggregate}) end)
 
     receive do
-      {:halt, value} ->
-        value
+      {:halt, {value, counter}} ->
+        {value, counter}
 
       :cont ->
         new_aggregate = aggregate + next_value
@@ -70,16 +68,18 @@ defmodule Main do
     end
   end
 
-  defp receive_loop(value_list) when is_list(value_list) do
+  defp receive_loop(value_list, counter) when is_list(value_list) do
+    if (rem(counter, 100) === 0) do
+      IO.puts("Round: #{counter}")
+    end
+    
     receive do
       {sender, value} ->
-        IO.inspect(value_list)
-
         if Enum.member?(value_list, value) do
-          send(sender, {:halt, value})
+          send(sender, {:halt, {value, counter}})
         else
           spawn(fn -> send(sender, :cont) end)
-          receive_loop([value | value_list])
+          receive_loop([value | value_list], counter + 1)
         end
 
       _other ->
