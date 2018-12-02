@@ -26,17 +26,12 @@ defmodule Main do
     send_loop(end_pid, {done, []}, aggregate, counter)
   end
 
-  defp send_loop(end_pid, {to_go, done}, aggregate, counter) do
-    [next_value | rest_stack] = to_go
-
+  defp send_loop(end_pid, {[next_value | rest_stack], done}, aggregate, counter) do
     self_pid = self()
-
-    # send our message
     spawn(fn -> send(end_pid, {self_pid, aggregate}) end)
 
-    # and wait for our response
     receive do
-      {:halt, {value, _}} ->
+      {:halt, value} ->
         {value, counter}
 
       :cont ->
@@ -60,7 +55,7 @@ defmodule Main do
           |> String.to_atom()
 
         if Process.whereis(name) do
-          send(sender, {:halt, {value, nil}})
+          send(sender, {:halt, value})
         else
           send(sender, :cont)
           new_pid = spawn(fn -> receive do _ -> :noop end end)
