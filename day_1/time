@@ -1,0 +1,3 @@
+elixirc main.ex \
+&& time elixir -e Main.run \
+&& rm Elixir.Main.beam
