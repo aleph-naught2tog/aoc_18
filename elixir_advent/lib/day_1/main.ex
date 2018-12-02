@@ -1,5 +1,5 @@
 defmodule Main do
-  def run(filename \\ "input.txt") do
+  def run(filename \\ "more_input.txt") do
     part_two(filename)
     |> IO.inspect()
   end
