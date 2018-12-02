@@ -13,20 +13,14 @@ defmodule ElixirAdvent.Day1 do
     |> IO.inspect()
   end
 
-  defp parse_lines(lines) do
-    lines
-    |> Enum.map(&String.trim/1)
-    |> Enum.map(&String.to_integer/1)
+  defp parse_line(line) do
+    line
+    |> String.trim()
+    |> String.to_integer()
   end
 
-  # testing
   defp part_two(filename) do
-    lines =
-      File.open!(filename, fn pid ->
-        pid
-        |> IO.stream(:line)
-        |> parse_lines()
-      end)
+    lines = Utilities.lines(filename, &parse_line/1)
 
     spawn(fn -> receive_loop() end)
     |> send_loop({lines, []}, 0, 0)
