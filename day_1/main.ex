@@ -84,11 +84,12 @@ defmodule Main do
 
   defp receive_loop([], {nil, nil}) do
     await do
-      {sender, 0} ->
+      {sender, value} ->
         spawn(fn -> send(sender, :cont) end)
 
-        {{[], []}, {[], []}}
-        |> receive_loop({0, 0})
+        {[], []}
+        |> add(value)
+        |> receive_loop({value, value})
 
       _other ->
         IO.puts("unexpected message, raising")
@@ -98,9 +99,6 @@ defmodule Main do
 
   defp receive_loop(value_list, {min, max}) do
     await do
-      {sender, 0} ->
-        send(sender, {:halt, {0, 0}})
-
       {sender, value} when found(value, min, max) ->
         send(sender, {:halt, {value, 0}})
 
@@ -138,32 +136,18 @@ defmodule Main do
     end
   end
 
-  defp add({{_neg_even, _neg_odd} = neg, pair}, value) when above?(value, 0) do
-    index = rem(value, 2)
-    list = elem(pair, index)
-    {neg, put_elem(pair, index, [value | list])}
-  end
-
-  defp add({pair, {_pos_even, _pos_odd} = pos}, value) when below?(value, 0) do
+  defp add(pair, value) do
     index = abs(rem(value, 2))
     list = elem(pair, index)
-    {pos, put_elem(pair, index, [value | list])}
+    put_elem(pair, index, [value | list])
   end
 
-  defp member?({_neg, {_, positive}}, value) when is_odd(value) and above?(value, 0) do
-    Enum.member?(positive, value)
+  defp member?({_, odd}, value) when is_odd(value) do
+    Enum.member?(odd, value)
   end
 
-  defp member?({_neg, {positive, _}}, value) when is_even(value) and above?(value, 0) do
-    Enum.member?(positive, value)
-  end
-
-  defp member?({{_, negative}, _pos}, value) when is_odd(value) and below?(value, 0) do
-    Enum.member?(negative, value)
-  end
-
-  defp member?({{negative, _}, _pos}, value) when is_even(value) and below?(value, 0) do
-    Enum.member?(negative, value)
+  defp member?({even, _}, value) when is_even(value) do
+    Enum.member?(even, value)
   end
 end
 
