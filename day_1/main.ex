@@ -97,39 +97,24 @@ defmodule Main do
   end
 
   defp receive_loop(value_list, {min, max}) do
-    await do
-      {sender, 0} ->
-        send(sender, {:halt, {0, 0}})
+    IO.write('.')
 
-      {sender, value} when found(value, min, max) ->
-        send(sender, {:halt, {value, 0}})
-
+    receive do
       {sender, value} ->
-        cond do
-          below?(value, min) ->
-            spawn(fn -> send(sender, :cont) end)
 
-            value_list
-            |> add(value)
-            |> receive_loop({value, max})
+        name =
+          value
+          |> Integer.to_string()
+          |> String.to_atom()
 
-          above?(value, max) ->
-            spawn(fn -> send(sender, :cont) end)
+        if Process.whereis(name) do
+          send(sender, {:halt, {value, nil}})
+        else
+          send(sender, :cont)
+          new_pid = spawn(fn -> continue(sender) end)
 
-            value_list
-            |> add(value)
-            |> receive_loop({min, value})
-
-          true ->
-            if member?(value_list, value) do
-              send(sender, {:halt, {value, 0}})
-            else
-              spawn(fn -> send(sender, :cont) end)
-
-              value_list
-              |> add(value)
-              |> receive_loop({min, max})
-            end
+          Process.register(new_pid, name)
+          receive_loop(value_list, {min, max})
         end
 
       _other ->
@@ -137,33 +122,11 @@ defmodule Main do
         exit(:error)
     end
   end
-
-  defp add({{_neg_even, _neg_odd} = neg, pair}, value) when above?(value, 0) do
-    index = rem(value, 2)
-    list = elem(pair, index)
-    {neg, put_elem(pair, index, [value | list])}
-  end
-
-  defp add({pair, {_pos_even, _pos_odd} = pos}, value) when below?(value, 0) do
-    index = abs(rem(value, 2))
-    list = elem(pair, index)
-    {put_elem(pair, index, [value | list]), pos}
-  end
-
-  defp member?({_neg, {_, positive}}, value) when is_odd(value) and above?(value, 0) do
-    Enum.member?(positive, value)
-  end
-
-  defp member?({_neg, {positive, _}}, value) when is_even(value) and above?(value, 0) do
-    Enum.member?(positive, value)
-  end
-
-  defp member?({{_, negative}, _pos}, value) when is_odd(value) and below?(value, 0) do
-    Enum.member?(negative, value)
-  end
-
-  defp member?({{negative, _}, _pos}, value) when is_even(value) and below?(value, 0) do
-    Enum.member?(negative, value)
+  
+  defp continue(sender) do
+    receive do
+      _ -> :noop
+    end
   end
 end
 
