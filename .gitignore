@@ -1,2 +1,5 @@
 others/
 .DS_Store
+_build
+elixir_advent
+input

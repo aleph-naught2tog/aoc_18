@@ -1,18 +1,5 @@
 defmodule ElixirAdvent do
-  @moduledoc """
-  Documentation for ElixirAdvent.
-  """
-
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> ElixirAdvent.hello()
-      :world
-
-  """
-  def hello do
-    :world
+  def main(command_line_arguments) do
+    IO.inspect(command_line_arguments)
   end
 end
