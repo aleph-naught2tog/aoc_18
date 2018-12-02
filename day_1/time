@@ -1,1 +1,2 @@
-time elixir main.exs
+elixirc main.ex \
+&& time elixir -e Main.run
