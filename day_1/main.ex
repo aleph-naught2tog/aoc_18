@@ -1,38 +1,5 @@
 defmodule Main do
-  use Bitwise
-
-  defmacro await(do: block) do
-    quote do
-      receive do
-        unquote(block)
-      after
-        5000 ->
-          IO.puts("no messages in receive")
-          exit(:error)
-      end
-    end
-  end
-
-  defmacro below?(value, min) do
-    quote do
-      unquote(value) < unquote(min)
-    end
-  end
-
-  defmacro above?(value, max) do
-    quote do
-      unquote(value) > unquote(max)
-    end
-  end
-
-  defguard is_even(value) when band(value, 1) === 0
-  defguard is_odd(value) when band(value, 1) === 1
-
-  defguard found(value, min, max) when value === min or value === max
-
-  def run(filename \\ "input.txt")
-
-  def run(filename) do
+  def run(filename \\ "input.txt") do
     part_two(filename)
     |> IO.inspect()
   end
@@ -51,15 +18,15 @@ defmodule Main do
         |> parse_lines()
       end)
 
-    spawn(fn -> receive_loop([], {nil, nil}) end)
-    |> send_loop({lines, []}, 0)
+    spawn(fn -> receive_loop() end)
+    |> send_loop({lines, []}, 0, 0)
   end
 
-  defp send_loop(end_pid, {[], done}, aggregate) do
-    send_loop(end_pid, {done, []}, aggregate)
+  defp send_loop(end_pid, {[], done}, aggregate, counter) do
+    send_loop(end_pid, {done, []}, aggregate, counter)
   end
 
-  defp send_loop(end_pid, {to_go, done}, aggregate) do
+  defp send_loop(end_pid, {to_go, done}, aggregate, counter) do
     [next_value | rest_stack] = to_go
 
     self_pid = self()
@@ -68,13 +35,14 @@ defmodule Main do
     spawn(fn -> send(end_pid, {self_pid, aggregate}) end)
 
     # and wait for our response
-    await do
-      {:halt, {value, counter}} ->
+    receive do
+      {:halt, {value, _}} ->
         {value, counter}
 
       :cont ->
+        counter = counter + 1
         new_aggregate = aggregate + next_value
-        send_loop(end_pid, {rest_stack, done ++ [next_value]}, new_aggregate)
+        send_loop(end_pid, {rest_stack, done ++ [next_value]}, new_aggregate, counter)
 
       _other ->
         IO.puts("unexpected message, raising")
@@ -82,23 +50,7 @@ defmodule Main do
     end
   end
 
-  defp receive_loop([], {nil, nil}) do
-    await do
-      {sender, 0} ->
-        spawn(fn -> send(sender, :cont) end)
-
-        {{[], []}, {[], []}}
-        |> receive_loop({0, 0})
-
-      _other ->
-        IO.puts("unexpected message, raising")
-        exit(:error)
-    end
-  end
-
-  defp receive_loop(value_list, {min, max}) do
-    IO.write('.')
-
+  defp receive_loop() do
     receive do
       {sender, value} ->
 
@@ -111,21 +63,15 @@ defmodule Main do
           send(sender, {:halt, {value, nil}})
         else
           send(sender, :cont)
-          new_pid = spawn(fn -> continue(sender) end)
+          new_pid = spawn(fn -> receive do _ -> :noop end end)
 
           Process.register(new_pid, name)
-          receive_loop(value_list, {min, max})
+          receive_loop()
         end
 
       _other ->
         IO.puts("unexpected message, raising")
         exit(:error)
-    end
-  end
-  
-  defp continue(sender) do
-    receive do
-      _ -> :noop
     end
   end
 end
