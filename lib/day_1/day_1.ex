@@ -1,5 +1,14 @@
-defmodule Main do
-  def run(filename \\ "more_input.txt") do
+defmodule ElixirAdvent.Day1 do
+  @folder "day_1"
+  @filename "day_1.txt"
+
+  def run(folder) do
+    filename =
+      folder
+      |> Path.join(@folder)
+      |> Path.join(@filename)
+      |> IO.inspect()
+
     part_two(filename)
     |> IO.inspect()
   end
@@ -10,6 +19,7 @@ defmodule Main do
     |> Enum.map(&String.to_integer/1)
   end
 
+  # testing
   defp part_two(filename) do
     lines =
       File.open!(filename, fn pid ->
@@ -70,7 +80,7 @@ defmodule Main do
           new_pid = spawn(&block/0)
 
           Process.register(new_pid, name)
-          
+
           receive_loop()
         end
 

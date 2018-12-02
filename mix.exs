@@ -9,8 +9,11 @@ defmodule ElixirAdvent.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       escript: [
-        main_module: ElixirAdvent
-      ]
+        main_module: ElixirAdvent,
+        path: "./bin/advent",
+        name: "advent"
+      ],
+      default_task: "runner"
     ]
   end
 
@@ -24,8 +27,11 @@ defmodule ElixirAdvent.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
+      # {
+      #   :painter,
+      #   git: "https://github.com/aleph-naught2tog/painter.git"
+      # }
     ]
   end
 end
+

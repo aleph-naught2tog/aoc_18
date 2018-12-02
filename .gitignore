@@ -3,3 +3,7 @@ others/
 _build
 elixir_advent
 input
+bin/advent
+deps
+.elixir_ls
+.vscode

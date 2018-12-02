@@ -1,0 +1,4 @@
+%{
+  "dep_from_git": {:git, "https://github.com/aleph-naught2tog/painter.git", "4bd5bb037644982b4c80a54341f70cc73abc6ce5", []},
+  "painter": {:git, "https://github.com/aleph-naught2tog/painter.git", "4bd5bb037644982b4c80a54341f70cc73abc6ce5", []},
+}
