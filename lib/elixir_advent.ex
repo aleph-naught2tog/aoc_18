@@ -1,9 +1,9 @@
 defmodule ElixirAdvent do
-  alias ElixirAdvent.{Day1, Day2, Day3}
+  alias ElixirAdvent.{Day1, Day2, Day3, Day4}
   @input_folder "input"
 
   @modules {
-    Day1, Day2, Day3
+    Day1, Day2, Day3, Day4
   }
 
   def main([]) do

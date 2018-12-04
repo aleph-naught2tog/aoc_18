@@ -11,7 +11,30 @@
   (->> filename
        (read-file)))
 
-(def pattern #"#(?<id>\d++)[^\d]++(?<x>\d++)[^\d]++(?<y>\d++)[^\d]++(?<width>\d++)[^\d]++(?<height>\d++)")
+(def day_4_pattern #"(?x) # whitespace flag
+\[
+(?<year>\d++)
+-(?<month>\d++)
+-(?<day>\d++)
+[^\d]
+(?<hour>\d++)
+:
+(?<minute>\d++)
+\]
+\s
+(?<type>
+(?:w.++)
+|
+(?:f.++)
+|
+(?:G\w++\s\#(?<id>\d++).++)
+)")
 
-(defn matcher [line]
-  (re-matcher pattern line))
+(defn matcher_for [pattern]
+  (fn [line] (re-matcher pattern line))
+)
+
+(def day_3_pattern #"#(?<id>\d++)[^\d]++(?<x>\d++)[^\d]++(?<y>\d++)[^\d]++(?<width>\d++)[^\d]++(?<height>\d++)")
+
+(defn day_3_matcher [line]
+  (re-matcher day_3_pattern line))
