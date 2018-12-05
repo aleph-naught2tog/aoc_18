@@ -27,19 +27,19 @@
               (roller_fn)
               (map mapper_fn))]))
 
-(defn roll-up [parsed_lines]
-  (let [year_roller (roller :year)
-        month_roller (roller :month)
+(defn mega-roller []
+  (let [month_roller (roller :month)
         day_roller (roller :day)
         hour_roller (roller :hour)
         minute_roller (roller :minute)]
-    (->> parsed_lines
-         (year_roller)
-         (map
-          (split-roll-mapper month_roller
-                             (split-roll-mapper day_roller
-                                                (split-roll-mapper hour_roller
-                                                                   (split-roll-mapper minute_roller (fn [x] x)))))))))
+    (->> (fn [x] x)
+         (split-roll-mapper minute_roller)
+         (split-roll-mapper hour_roller)
+         (split-roll-mapper day_roller)
+         (split-roll-mapper month_roller))))
+
+(defn roll-up [parsed_lines]
+  (map (mega-roller) ((roller :year) parsed_lines)))
 
 (defn -main [& args]
   (let [matcher (utils/matcher_for utils/day_4_pattern)]
