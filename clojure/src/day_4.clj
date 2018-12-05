@@ -18,6 +18,15 @@
          (sort-by key)
          (group-by key))))
 
+(defn map_hours [[hour h_group]]
+  [hour (sort-by :minute h_group)])
+
+(defn split-roll-mapper [roller_fn mapper_fn]
+  (fn [[key value_group]]
+    [key (->> value_group
+              (roller_fn)
+              (map mapper_fn))]))
+
 (defn roll-up [parsed_lines]
   (let [year_roller (roller :year)
         month_roller (roller :month)
@@ -32,12 +41,7 @@
                            (map (fn [[month m_group]]
                                   [month (->> m_group
                                               (day_roller)
-                                              (map (fn [[day d_group]]
-                                                     [day (->> d_group
-                                                               (hour_roller)
-                                                               (map (fn [[hour h_group]]
-                                                                      [hour (->> h_group
-                                                                                 (sort-by :minute))])))])))])))])))))
+                                              (map (split-roll-mapper hour_roller map_hours)))])))])))))
 
 (defn -main [& args]
   (let [matcher (utils/matcher_for utils/day_4_pattern)]
