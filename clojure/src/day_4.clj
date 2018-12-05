@@ -2,15 +2,34 @@
   (:require [utilities :as utils])
   (:require [clojure.pprint :as p]))
 
+(defn pick-type [[first_letter]]
+  (case first_letter
+    \f :start_sleep
+    \w :end_sleep
+    \G :start_shift
+    :other))
+
+(def int-fn #(Integer/parseInt %))
+
+(defn do-process [matcher]
+  (letfn [(key-matcher
+            ([key] (.group matcher key))
+            ([key, func] (func (.group matcher key))))]
+    {:year (key-matcher "year" int-fn)
+     :month (key-matcher "month" int-fn)
+     :day (key-matcher "day" int-fn)
+     :hour (* -1 (key-matcher "hour" int-fn))
+     :minute (key-matcher "minute" int-fn)
+     :type (key-matcher "type" pick-type)
+     :id (key-matcher "id")}))
+
 (defn parse [matcher_maker line]
   (let [matcher (matcher_maker line)]
     (if (.matches matcher)
-      {:year (Integer/parseInt (.group matcher "year"))
-       :month (Integer/parseInt (.group matcher "month"))
-       :day (Integer/parseInt (.group matcher "day"))
-       :hour (Integer/parseInt (.group matcher "hour"))
-       :minute (Integer/parseInt (.group matcher "minute"))
-       :type (.group matcher "type")})))
+      (let [result (do-process matcher)]
+        (if (neg? (get result :hour))
+          (update result :day + 1)
+          result)))))
 
 (defn roller [key]
   (fn [values]
@@ -33,7 +52,7 @@
         hour_roller (roller :hour)
         minute_roller (roller :minute)]
     (->> (fn [x] x)
-         (split-roll-mapper minute_roller)
+        ;  (split-roll-mapper minute_roller)
          (split-roll-mapper hour_roller)
          (split-roll-mapper day_roller)
          (split-roll-mapper month_roller))))
@@ -43,7 +62,10 @@
 
 (defn -main [& args]
   (let [matcher (utils/matcher_for utils/day_4_pattern)]
-    (p/pprint (->> args
-                   (utils/get-lines)
-                   (map #(parse matcher %))
-                   (roll-up)))))
+    ; (p/pprint
+    (->> args
+         (utils/get-lines)
+         (map #(parse matcher %))
+         (roll-up)
+         (run! (fn [v] (p/pprint v) (println "-----"))))))
+                  ;  )
